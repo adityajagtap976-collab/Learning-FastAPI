@@ -1,5 +1,5 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
+from fastapi import FastAPI, Query, status
+from pydantic import BaseModel, SecretStr
 
 app = FastAPI()
 
@@ -33,3 +33,24 @@ def create_item(item: Item):
 @app.put("/items/{item_id}")
 def update_item(item_id: int, item: Item):
     return {"item_id": item_id, "item_name": item.name, "updated_price": item.price}
+
+
+# Query parameters with validation
+@app.get("/items")
+def read_items(q: str = Query(None, min_length=3, max_length=10)):
+    return {"query": q}
+
+
+# Response Models & HTTP Status Codes
+class UserIn(BaseModel):
+    username: str
+    password: SecretStr
+
+
+class UserOut(BaseModel):
+    username: str
+
+
+@app.post("/users/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+def create_user(user: UserIn):
+    return user
