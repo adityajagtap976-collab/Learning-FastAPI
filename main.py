@@ -1,5 +1,7 @@
-from fastapi import FastAPI, Query, status
+from fastapi import FastAPI, Query, status, HTTPException
 from pydantic import BaseModel, SecretStr
+from helper import verify_item_exists
+from typing import Optional
 
 app = FastAPI()
 
@@ -8,12 +10,13 @@ app = FastAPI()
 @app.get("/items/{item_id}")
 def read_item(item_id: int):
     # FastAPI automatically extracts item_id from the URL and converts it to an integer.
+    verify_item_exists(item_id)
     return {"item_id": item_id, "message": f"Fetching data for {item_id}"}
 
 
 # Query Parameter
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str = None):
+@app.get("/items/{item_id}/query")
+def read_item_with_query(item_id: int, q: Optional[str] = None):
     # 'item_id' comes from the path: /items/42
     # 'q' comes from the query string: ?q=python
     return {"item_id": item_id, "query": q}
@@ -22,7 +25,7 @@ def read_item(item_id: int, q: str = None):
 class Item(BaseModel):
     name: str
     price: float
-    is_offer: bool = None
+    is_offer: Optional[bool] = None
 
 
 @app.post("/items/")
@@ -54,3 +57,11 @@ class UserOut(BaseModel):
 @app.post("/users/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_user(user: UserIn):
     return user
+
+
+@app.get("/items/{item_id}/verified")
+def get_item(item_id: int):
+    # Call our helper function to check if the item exists
+    verify_item_exists(item_id)
+
+    return {"item_id": item_id, "name": "Sample Item"}
